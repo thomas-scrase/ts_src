@@ -15,8 +15,9 @@ namespace oomph
 //=============================================================
 /// A class for all elements that solve the Monodomain
 /// equations.
-/// \f[ \omega\left(C_m\frac{\partial V}{\partial t} + I\right) = \frac{\partial}{\partial x_i}\left(D_{ij}\frac{\partial V}{\partial x_k}\right) \f]
-/// \omega = \frac{[C_m][X]^2}{[D][T]}
+/// \f[ \omega\left(\gamma C_m\frac{\partial V}{\partial t} + I\right) = \frac{\partial}{\partial x_i}\left(D_{ij}\frac{\partial V}{\partial x_k}\right) \f]
+/// \omega = \frac{[I][X]^2}{[D][U]} analogous to the peclet number in advection diffusion problems
+/// \gamma = \frac{[C][U]}{[T][I]} analogous to the strouhal number in advection diffusion problems
 /// where:
 ///  C_m is the non-dimensionalised membrane capacitance per unit volume
 ///  V is the non-dimensionalised transmembrane potential
@@ -25,10 +26,12 @@ namespace oomph
 ///  x_i is the non-dimensionalised i-th spatial coordinate
 ///  D_{ij} is the non-dimensionalised conductivity tensor
 
-///  [C_m] is the characteristic capacitance of the problem
-///  [X] is the characteristic length-scale of the problem
+///  [C] is the characteristic capacitance per unit volume of the problem
+///  [X] is the characteristic spatial length-scale of the problem
 ///  [D] is the characteristic conductance of the problem
 ///  [T] is the characteristic time-scale of the problem
+///  [U] is the characteristic transmembrane potential of the problem
+///  [I] is the characteristic transmembrane current per unit volume of the problem
 
 // Based heavily on the GeneralisedAdvectionDiffusionEquations etc classes
 
@@ -55,13 +58,14 @@ public:
                                             double& C);
 
  /// Constructor: Initialise the Source_fct_pt, Diff_fct_pt, and Capacitance_fct_pt to null
- /// and set the (pointer to) Omega number to default;
+ /// and set the (pointer to) Omega number and Gamma number to default;
  MonodomainEquations() : Source_fct_pt(0),
                          Diff_fct_pt(0),
                          Capacitance_fct_pt(0),
                          ALE_is_disabled(false)
  {
   Omega_pt = &Default_omega_number;
+  Gamma_pt = &Default_gamma_number;
  }
 
  /// Broken copy constructor
@@ -235,6 +239,16 @@ public:
  double*& omega_pt()
  {
   return Omega_pt;
+ }
+
+ const double& gamma() const
+ {
+  return *Gamma_pt;
+ }
+
+ double*& gamma_pt()
+ {
+  return Gamma_pt;
  }
 
  /// Get source term at (Eulerian) position x. This function is
@@ -438,8 +452,11 @@ protected:
                                                                   DenseMatrix<double>& mass_matrix,
                                                                   unsigned flag);
 
- /// Pointer to global Peclet number
+ /// Pointer to global Omega (Peclet) number
  double* Omega_pt;
+
+ /// Pointer to global Gamma (Strouhal) number
+ double* Gamma_pt;
 
  /// Pointer to source function:
  MonodomainSourceFctPt Source_fct_pt;
@@ -456,8 +473,11 @@ protected:
  bool ALE_is_disabled;
 
 private:
- /// Static default value for the Peclet number
+ /// Static default value for the Omega (Peclet) number
  static double Default_omega_number;
+
+ /// Static default value for the Gamma (Strouhal) number
+ static double Default_gamma_number;
 };
 
 
