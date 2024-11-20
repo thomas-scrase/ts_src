@@ -47,7 +47,7 @@ public:
  typedef void (*MonodomainSourceFctPt)(const Vector<double>& x,
                                        double& f);
 
- /// Funciton pointer to a diffusivity function
+ /// Function pointer to a diffusivity function
  typedef void (*MonodomainDiffFctPt)(const Vector<double>& x,
                                      DenseMatrix<double>& D);
 

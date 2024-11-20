@@ -674,7 +674,30 @@ double QMonodomainElement<DIM, NNODE_1D>::
  return J;
 }
 
+//======================================================================
+// Set the data for the number of Variables at each node
+//======================================================================
+template<unsigned DIM, unsigned NNODE_1D>
+const unsigned QMonodomainElement<DIM, NNODE_1D>::Initial_Nvalue = 1;
 
+//====================================================================
+// Force build of templates
+//====================================================================
+template class MonodomainEquations<1>;
+template class MonodomainEquations<2>;
+template class MonodomainEquations<3>;
+
+template class QMonodomainElement<1, 2>;
+template class QMonodomainElement<1, 3>;
+template class QMonodomainElement<1, 4>;
+
+template class QMonodomainElement<2, 2>;
+template class QMonodomainElement<2, 3>;
+template class QMonodomainElement<2, 4>;
+
+template class QMonodomainElement<3, 2>;
+template class QMonodomainElement<3, 3>;
+template class QMonodomainElement<3, 4>;
 
 
 
