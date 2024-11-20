@@ -1,10 +1,23 @@
 #include "monodomain_elements.h"
 
+namespace oomph
+{
+// Default values. I have chosen Omega (Peclet), and Gamma
+// (Strouhal) numbers such that the equations solve the steady anisotropic heat equation.
+
+/// Static default value for the Omega (Peclet) number
+template<unsigned DIM>
+double MonodomainEquations<DIM>::Default_omega_number = 1.0;
+
+/// Static default value for the Gamma (Strouhal) number
+double MonodomainEquations<DIM>::Default_gamma_number = 0.0;
+
+
 // Essentially the same as the implementation in GeneralisedAdvectionDiffusionEquations but with
 // zero wind, a capacitance scaling term on the time-derivative,
 // and the (analogous numbner to the) Peclet number scales the source term
 template<unsigned DIM>
-void MonodomainEquations::fill_in_generic_residual_contribution_monodomain(Vector<double>& residuals,
+void MonodomainEquations<DIM>::fill_in_generic_residual_contribution_monodomain(Vector<double>& residuals,
                                                                            DenseMatrix<double>& jacobian,
                                                                            DenseMatrix<double>& mass_matrix,
                                                                            unsigned flag)
@@ -92,14 +105,14 @@ void MonodomainEquations::fill_in_generic_residual_contribution_monodomain(Vecto
   // Get source function
   //-------------------
   double source;
-  get_source_monodomain(ipt, interpolated_x, source);
+  get_source_monodomain(ipt, s, interpolated_x, source);
 
   // Get diffusivity tensor
   DenseMatrix<double> D(DIM, DIM);
   get_diff_monodomain(ipt, s, interpolated_x, D);
 
   double capacitance;
-  get_capacitance_monodomain(ipt, interpolated_x, capacitance);
+  get_capacitance_monodomain(ipt, s, interpolated_x, capacitance);
 
   // Assemble residuals and Jacobian
   //--------------------------------
@@ -195,3 +208,474 @@ void MonodomainEquations::fill_in_generic_residual_contribution_monodomain(Vecto
   }
  } // End of loop over integration points
 }
+
+//======================================================================
+/// Self-test:  Return 0 for OK
+//======================================================================
+template<unsigned DIM>
+unsigned MonodomainEquations<DIM>::self_test()
+{
+ bool passed = true;
+
+ // Check lower-level stuff
+ if (FiniteElement::self_test() != 0)
+ {
+  passed = false;
+ }
+
+ // Return verdict
+ if (passed)
+ {
+  return 0;
+ }
+ else
+ {
+  return 1;
+ }
+}
+
+//======================================================================
+/// Output function:
+///
+///   x,y,u,w_x,w_y   or    x,y,z,u,w_x,w_y,w_z
+///
+/// nplot points in each coordinate direction
+//======================================================================
+template<unsigned DIM>
+void MonodomainEquations<DIM>::output(
+  std::ostream& outfile, const unsigned& nplot)
+{
+ // Vector of local coordinates
+ Vector<double> s(DIM);
+
+ // Tecplot header info
+ outfile << tecplot_zone_string(nplot);
+
+ const unsigned n_node = this->nnode();
+ Shape psi(n_node);
+ DShape dpsidx(n_node, DIM);
+
+ // Loop over plot points
+ unsigned num_plot_points = nplot_points(nplot);
+ for (unsigned iplot = 0; iplot < num_plot_points; iplot++)
+ {
+  // Get local coordinates of plot point
+  get_s_plot(iplot, nplot, s);
+
+  // Get Eulerian coordinate of plot point
+  Vector<double> x(DIM);
+  interpolated_x(s, x);
+
+  for (unsigned i = 0; i < DIM; i++)
+  {
+   outfile << x[i] << " ";
+  }
+  outfile << interpolated_u_monodomain(s) << " ";
+
+  // Get the gradients
+  (void)this->dshape_eulerian(s, psi, dpsidx);
+  Vector<double> interpolated_dudx(DIM, 0.0);
+  for (unsigned n = 0; n < n_node; n++)
+  {
+   const double u_ = this->nodal_value(n, 0);
+   for (unsigned i = 0; i < DIM; i++)
+   {
+    interpolated_dudx[i] += u_ * dpsidx(n, i);
+   }
+  }
+
+  for (unsigned i = 0; i < DIM; i++)
+  {
+   outfile << interpolated_dudx[i] << " ";
+  }
+
+  // Get the capacitance
+  double capacitance;
+  // Dummy integration point variable needed
+  unsigned ipt = 0;
+  get_capacitance_monodomain(ipt, s, x, wind);
+  outfile << capacitance << " ";
+
+  // Get the diffusion tensor.
+  // Diffusion tensor is normally symmetric so we will just output upper
+  // triangle. This can be changed later if needs be.
+  DenseMatrix<double> D(DIM);
+  // Dummy integration point variable needed
+  unsigned ipt = 0;
+  get_diff_monodomain(ipt, s, x, D);
+  for (unsigned i = 0; i < DIM; i++)
+  {
+   for(unsigned j=i; j<DIM; j++)
+   {
+    outfile << D(i,j) << " ";
+   }
+  }
+  outfile << std::endl;
+ }
+ // Write tecplot footer (e.g. FE connectivity lists)
+ write_tecplot_zone_footer(outfile, nplot);
+}
+
+//======================================================================
+/// C-style output function:
+///
+///   x,y,u   or    x,y,z,u
+///
+/// nplot points in each coordinate direction
+//======================================================================
+template<unsigned DIM>
+void MonodomainEquations<DIM>::output(
+  FILE* file_pt, const unsigned& nplot)
+{
+ // Vector of local coordinates
+ Vector<double> s(DIM);
+
+ // Tecplot header info
+ fprintf(file_pt, "%s", tecplot_zone_string(nplot).c_str());
+
+ // Loop over plot points
+ unsigned num_plot_points = nplot_points(nplot);
+ for (unsigned iplot = 0; iplot < num_plot_points; iplot++)
+ {
+  // Get local coordinates of plot point
+  get_s_plot(iplot, nplot, s);
+
+  for (unsigned i = 0; i < DIM; i++)
+  {
+   fprintf(file_pt, "%g ", interpolated_x(s, i));
+  }
+  fprintf(file_pt, "%g \n", interpolated_u_monodomain(s));
+ }
+
+ // Write tecplot footer (e.g. FE connectivity lists)
+ write_tecplot_zone_footer(file_pt, nplot);
+}
+
+//======================================================================
+///  Output exact solution
+///
+/// Solution is provided via function pointer.
+/// Plot at a given number of plot points.
+///
+///   x,y,u_exact    or    x,y,z,u_exact
+//======================================================================
+template<unsigned DIM>
+void MonodomainEquations<DIM>::output_fct(
+  std::ostream& outfile,
+  const unsigned& nplot,
+  FiniteElement::SteadyExactSolutionFctPt exact_soln_pt)
+{
+ // Vector of local coordinates
+ Vector<double> s(DIM);
+
+ // Vector for coordintes
+ Vector<double> x(DIM);
+
+ // Tecplot header info
+ outfile << tecplot_zone_string(nplot);
+
+ // Exact solution Vector (here a scalar)
+ Vector<double> exact_soln(1);
+
+ // Loop over plot points
+ unsigned num_plot_points = nplot_points(nplot);
+ for (unsigned iplot = 0; iplot < num_plot_points; iplot++)
+ {
+  // Get local coordinates of plot point
+  get_s_plot(iplot, nplot, s);
+
+  // Get x position as Vector
+  interpolated_x(s, x);
+
+  // Get exact solution at this point
+  (*exact_soln_pt)(x, exact_soln);
+
+  // Output x,y,...,u_exact
+  for (unsigned i = 0; i < DIM; i++)
+  {
+    outfile << x[i] << " ";
+  }
+  outfile << exact_soln[0] << std::endl;
+ }
+
+ // Write tecplot footer (e.g. FE connectivity lists)
+ write_tecplot_zone_footer(outfile, nplot);
+}
+
+//======================================================================
+/// Validate against exact solution
+///
+/// Solution is provided via function pointer.
+/// Plot error at a given number of plot points.
+///
+//======================================================================
+template<unsigned DIM>
+void MonodomainEquations<DIM>::compute_error(
+  std::ostream& outfile,
+  FiniteElement::SteadyExactSolutionFctPt exact_soln_pt,
+  double& error,
+  double& norm)
+{
+ // Initialise
+ error = 0.0;
+ norm = 0.0;
+
+ // Vector of local coordinates
+ Vector<double> s(DIM);
+
+ // Vector for coordintes
+ Vector<double> x(DIM);
+
+ // Find out how many nodes there are in the element
+ unsigned n_node = nnode();
+
+ Shape psi(n_node);
+
+ // Set the value of n_intpt
+ unsigned n_intpt = integral_pt()->nweight();
+
+ // Tecplot header info
+ outfile << "ZONE" << std::endl;
+
+ // Exact solution Vector (here a scalar)
+ Vector<double> exact_soln(1);
+
+ // Loop over the integration points
+ for (unsigned ipt = 0; ipt < n_intpt; ipt++)
+ {
+  // Assign values of s
+  for (unsigned i = 0; i < DIM; i++)
+  {
+   s[i] = integral_pt()->knot(ipt, i);
+  }
+
+  // Get the integral weight
+  double w = integral_pt()->weight(ipt);
+
+  // Get jacobian of mapping
+  double J = J_eulerian(s);
+
+  // Premultiply the weights and the Jacobian
+  double W = w * J;
+
+  // Get x position as Vector
+  interpolated_x(s, x);
+
+  // Get FE function value
+  double u_fe = interpolated_u_monodomain(s);
+
+  // Get exact solution at this point
+  (*exact_soln_pt)(x, exact_soln);
+
+  // Output x,y,...,error
+  for (unsigned i = 0; i < DIM; i++)
+  {
+   outfile << x[i] << " ";
+  }
+  outfile << exact_soln[0] << " " << exact_soln[0] - u_fe << std::endl;
+
+  // Add to error and norm
+  norm += exact_soln[0] * exact_soln[0] * W;
+  error += (exact_soln[0] - u_fe) * (exact_soln[0] - u_fe) * W;
+ }
+}
+
+//======================================================================
+/// Validate against unsteady exact solution
+///
+/// Solution is provided via function pointer.
+/// Plot error at a given number of plot points.
+///
+//======================================================================
+template<unsigned DIM>
+void MonodomainEquations<DIM>::compute_error(
+  std::ostream& outfile,
+  FiniteElement::SteadyExactSolutionFctPt exact_soln_pt,
+  const double& t,
+  double& error,
+  double& norm)
+{
+ // Initialise
+ error = 0.0;
+ norm = 0.0;
+
+ // Vector of local coordinates
+ Vector<double> s(DIM);
+
+ // Vector for coordintes
+ Vector<double> x(DIM);
+
+ // Find out how many nodes there are in the element
+ unsigned n_node = nnode();
+
+ Shape psi(n_node);
+
+ // Set the value of n_intpt
+ unsigned n_intpt = integral_pt()->nweight();
+
+ // Tecplot header info
+ outfile << "ZONE" << std::endl;
+
+ // Exact solution Vector (here a scalar)
+ Vector<double> exact_soln(1);
+
+ // Loop over the integration points
+ for (unsigned ipt = 0; ipt < n_intpt; ipt++)
+ {
+  // Assign values of s
+  for (unsigned i = 0; i < DIM; i++)
+  {
+   s[i] = integral_pt()->knot(ipt, i);
+  }
+
+  // Get the integral weight
+  double w = integral_pt()->weight(ipt);
+
+  // Get jacobian of mapping
+  double J = J_eulerian(s);
+
+  // Premultiply the weights and the Jacobian
+  double W = w * J;
+
+  // Get x position as Vector
+  interpolated_x(s, x);
+
+  // Get FE function value
+  double u_fe = interpolated_u_monodomain(s);
+
+  // Get exact solution at this point
+  (*exact_soln_pt)(t, x, exact_soln);
+
+  // Output x,y,...,error
+  for (unsigned i = 0; i < DIM; i++)
+  {
+   outfile << x[i] << " ";
+  }
+  outfile << exact_soln[0] << " " << exact_soln[0] - u_fe << std::endl;
+
+  // Add to error and norm
+  norm += exact_soln[0] * exact_soln[0] * W;
+  error += (exact_soln[0] - u_fe) * (exact_soln[0] - u_fe) * W;
+ }
+}
+
+//======================================================================
+/// Calculate the integrated value of the unknown over the element
+///
+//======================================================================
+template<unsigned DIM>
+double MonodomainEquations<DIM>::integrate_u()
+{
+ // Initialise
+ double sum = 0.0;
+
+ // Vector of local coordinates
+ Vector<double> s(DIM);
+
+ // Find out how many nodes there are in the element
+ const unsigned n_node = nnode();
+
+ // Find the index at which the concentration is stored
+ const unsigned u_nodal_index = this->u_index_monodomain();
+
+ // Allocate memory for the shape functions
+ Shape psi(n_node);
+
+ // Set the value of n_intpt
+ const unsigned n_intpt = integral_pt()->nweight();
+
+ // Loop over the integration points
+ for (unsigned ipt = 0; ipt < n_intpt; ipt++)
+ {
+  // Get the integral weight
+  const double w = integral_pt()->weight(ipt);
+
+  // Get the shape functions
+  this->shape_at_knot(ipt, psi);
+
+  // Calculate the concentration
+  double interpolated_u = 0.0;
+  for (unsigned l = 0; l < n_node; l++)
+  {
+   interpolated_u += this->nodal_value(l, u_nodal_index) * psi(l);
+  }
+
+  // Get jacobian of mapping
+  const double J = J_eulerian_at_knot(ipt);
+
+  // Add the values to the sum
+  sum += interpolated_u * w * J;
+ }
+
+ // return the sum
+ return sum;
+}
+
+
+/// /////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////
+
+
+//======================================================================
+/// Define the shape functions and test functions and derivatives
+/// w.r.t. global coordinates and return Jacobian of mapping.
+///
+/// Galerkin: Test functions = shape functions
+//======================================================================
+template<unsigned DIM, unsigned NNODE_1D>
+double QMonodomainElement<DIM, NNODE_1D>::
+  dshape_and_dtest_eulerian_monodomain(const Vector<double>& s,
+                                       Shape& psi,
+                                       DShape& dpsidx,
+                                       Shape& test,
+                                       DShape& dtestdx) const
+{
+ // Call the geometrical shape functions and derivatives
+ double J = this->dshape_eulerian(s, psi, dpsidx);
+
+ // Loop over the test functions and derivatives and set them equal to the
+ // shape functions
+ for (unsigned i = 0; i < NNODE_1D; i++)
+ {
+  test[i] = psi[i];
+  for (unsigned j = 0; j < DIM; j++)
+  {
+   dtestdx(i, j) = dpsidx(i, j);
+  }
+ }
+
+ // Return the jacobian
+ return J;
+}
+
+//======================================================================
+/// Define the shape functions and test functions and derivatives
+/// w.r.t. global coordinates and return Jacobian of mapping.
+///
+/// Galerkin: Test functions = shape functions
+//======================================================================
+template<unsigned DIM, unsigned NNODE_1D>
+double QMonodomainElement<DIM, NNODE_1D>::
+  dshape_and_dtest_eulerian_at_knot_monodomain(const unsigned& ipt,
+                                               Shape& psi,
+                                               DShape& dpsidx,
+                                               Shape& test,
+                                               DShape& dtestdx) const
+{
+ // Call the geometrical shape functions and derivatives
+ double J = this->dshape_eulerian_at_knot(ipt, psi, dpsidx);
+
+ // Set the test functions equal to the shape functions (pointer copy)
+ test = psi;
+ dtestdx = dpsidx;
+
+ // Return the jacobian
+ return J;
+}
+
+
+
+
+
+}// End namespace

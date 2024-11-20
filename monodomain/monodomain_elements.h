@@ -90,7 +90,11 @@ public:
  /// Virtual to allow for overriding in operator splitting methods.
  /// In operator splitting we want to be able to grab other values
  /// as a substitute for the values at the previous time-step.
- virtual double du_dt_monodomain(const unsigned& n) const
+ /// Added a flag to allow for operator splitting method to be used
+ /// on by default so that the fill-in procedure is unchanged. This
+ /// flag doesn't do anything in the base case so we just ignore it
+ /// by default. This flag should be turned off for outputting.
+ virtual double du_dt_monodomain(const unsigned& n, const bool& use_operator_splitting = true) const
  {
   // Get the data's timestepper
   TimeStepper* time_stepper_pt = this->node_pt(n)->time_stepper_pt();
@@ -186,13 +190,7 @@ public:
                     FiniteElement::UnsteadyExactSolutionFctPt exact_soln_pt,
                     const double& time,
                     double& error,
-                    double& norm)
- {
-  throw OomphLibError(
-    "No time-dependent compute_error() for Advection Diffusion elements",
-    OOMPH_CURRENT_FUNCTION,
-    OOMPH_EXCEPTION_LOCATION);
- }
+                    double& norm);
 
  /// Integrate the concentration over the element
  double integrate_u();
@@ -256,8 +254,12 @@ public:
  /// Get source term at (Eulerian) position x. This function is
  /// virtual to allow overloading in multi-physics problems where
  /// the strength of the source function might be determined by
- /// another system of equations
+ /// another system of equations.
+ /// Added local coordinate as an argument because it is feasible
+ /// that the equations will be used without operator splitting
+ /// where the source is taken from an external element
  inline virtual void get_source_monodomain(const unsigned& ipt,
+                                           const Vector<double>& s,
                                            const Vector<double>& x,
                                            double& source) const
  {
@@ -312,15 +314,18 @@ public:
  /// Get capacitance term at (Eulerian) position x. This function is
  /// virtual to allow overloading in multi-physics problems where
  /// the strength of the capacitance function might be determined by
- /// another system of equations
+ /// another system of equations.
+ /// Added local coordinate since it is feasible that capacitance is
+ /// determined by the cell model.
  inline virtual void get_capacitance_monodomain(const unsigned& ipt,
+                                                const Vector<double>& s,
                                                 const Vector<double>& x,
                                                 double& capacitance) const
  {
   // If no source function has been set, return zero
   if (Capacitance_fct_pt == 0)
   {
-   capacitance = 0.0;
+   capacitance = 1.0;
   }
   else
   {
@@ -400,6 +405,9 @@ public:
  
 
  /// Return FE representation of function value u(s) at local coordinate s
+ /// Used by external elements when getting u from this element. Not to be
+ /// used by this element since we can often more efficiently utilise the 
+ /// shape functions by reusing them.
  inline double interpolated_u_monodomain(const Vector<double>& s) const
  {
   // Find number of nodes
@@ -483,14 +491,159 @@ private:
 };
 
 
+/// /////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////
+
 
 // Q monodomain element class
 template<unsigned DIM, unsigned NNODE>
 class QMonodomainElement : public virtual MonodomainEquations<DIM>,
                            public virtual QElement<DIM, NNODE>
 {
+private:
+ /// Static array of ints to hold number of variables at
+ /// nodes: Initial_Nvalue[n]
+ static const unsigned Initial_Nvalue;
 
+public:
+ /// Constructor: Call constructors for QElement and
+ /// Advection Diffusion equations
+ QMonodomainElement()
+   : QElement<DIM, NNODE_1D>(), MonodomainEquations<DIM>()
+ {
+ }
+
+ /// Broken copy constructor
+ QMonodomainElement(
+   const QMonodomainElement<DIM, NNODE_1D>& dummy) =
+   delete;
+
+ /// Broken assignment operator
+ void operator=(
+   const QMonodomainElement<DIM, NNODE_1D>&) = delete;
+
+ ///  Required  # of `values' (pinned or dofs)
+ /// at node n
+ inline unsigned required_nvalue(const unsigned& n) const
+ {
+  return Initial_Nvalue;
+ }
+
+ /// Output function:
+ ///  x,y,u   or    x,y,z,u
+ void output(std::ostream& outfile)
+ {
+  MonodomainEquations<DIM>::output(outfile);
+ }
+
+ /// Output function:
+ ///  x,y,u   or    x,y,z,u at n_plot^DIM plot points
+ void output(std::ostream& outfile, const unsigned& n_plot)
+ {
+  MonodomainEquations<DIM>::output(outfile, n_plot);
+ }
+
+
+ /// C-style output function:
+ ///  x,y,u   or    x,y,z,u
+ void output(FILE* file_pt)
+ {
+  MonodomainEquations<DIM>::output(file_pt);
+ }
+
+ ///  C-style output function:
+ ///   x,y,u   or    x,y,z,u at n_plot^DIM plot points
+ void output(FILE* file_pt, const unsigned& n_plot)
+ {
+  MonodomainEquations<DIM>::output(file_pt, n_plot);
+ }
+
+ /// Output function for an exact solution:
+ ///  x,y,u_exact   or    x,y,z,u_exact at n_plot^DIM plot points
+ void output_fct(std::ostream& outfile,
+                 const unsigned& n_plot,
+                 FiniteElement::SteadyExactSolutionFctPt exact_soln_pt)
+ {
+  MonodomainEquations<DIM>::output_fct(
+    outfile, n_plot, exact_soln_pt);
+ }
+
+
+ /// Output function for a time-dependent exact solution.
+ ///  x,y,u_exact   or    x,y,z,u_exact at n_plot^DIM plot points
+ /// (Calls the steady version)
+ void output_fct(std::ostream& outfile,
+                 const unsigned& n_plot,
+                 const double& time,
+                 FiniteElement::UnsteadyExactSolutionFctPt exact_soln_pt)
+ {
+  MonodomainEquations<DIM>::output_fct(
+    outfile, n_plot, time, exact_soln_pt);
+ }
+
+protected:
+ /// Shape, test functions & derivs. w.r.t. to global coords. Return
+ /// Jacobian.
+ inline double dshape_and_dtest_eulerian_monodomain(
+   const Vector<double>& s,
+   Shape& psi,
+   DShape& dpsidx,
+   Shape& test,
+   DShape& dtestdx) const;
+
+ /// Shape, test functions & derivs. w.r.t. to global coords. at
+ /// integration point ipt. Return Jacobian.
+ inline double dshape_and_dtest_eulerian_at_knot_monodomain(
+   const unsigned& ipt,
+   Shape& psi,
+   DShape& dpsidx,
+   Shape& test,
+   DShape& dtestdx) const;
 };
+
+
+/// /////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////
+
+
+//=======================================================================
+/// Face geometry for the QMonodomainElement
+/// elements: The spatial dimension of the face elements is one lower than
+/// that of the bulk element but they have the same number of points along
+/// their 1D edges.
+//=======================================================================
+template<unsigned DIM, unsigned NNODE_1D>
+class FaceGeometry<QMonodomainElement<DIM, NNODE_1D>>
+  : public virtual QElement<DIM - 1, NNODE_1D>
+{
+public:
+  /// Constructor: Call the constructor for the
+  /// appropriate lower-dimensional QElement
+  FaceGeometry() : QElement<DIM - 1, NNODE_1D>() {}
+};
+
+
+/// /////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////
+
+
+//=======================================================================
+/// Face geometry for the 1D QGeneralisedAdvectionDiffusion elements: Point
+/// elements
+//=======================================================================
+template<unsigned NNODE_1D>
+class FaceGeometry<QMonodomainElement<1, NNODE_1D>>
+  : public virtual PointElement
+{
+public:
+  /// Constructor: Call the constructor for the
+  /// appropriate lower-dimensional QElement
+  FaceGeometry() : PointElement() {}
+};
+
 
 
 // T monodomain element class
