@@ -644,16 +644,5 @@ public:
   FaceGeometry() : PointElement() {}
 };
 
-
-
-// T monodomain element class
-template<unsigned DIM, unsigned NNODE>
-class TMonodomainElement : public virtual MonodomainEquations<DIM>,
-                           public virtual TElement<DIM, NNODE>
-{
-
-};
-
-
 } // End namespace
 #endif
