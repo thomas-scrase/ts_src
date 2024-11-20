@@ -35,7 +35,6 @@ namespace oomph
 
 // Based heavily on the GeneralisedAdvectionDiffusionEquations etc classes
 
-
 /// This contains the generic maths. Shape functions, geometric
 /// mapping etc. must get implemented in derived class.
 //=============================================================
@@ -88,7 +87,10 @@ public:
 
  /// du/dt at local node n.
  /// Uses suitably interpolated value for hanging nodes.
- double du_dt_monodomain(const unsigned& n) const
+ /// Virtual to allow for overriding in operator splitting methods.
+ /// In operator splitting we want to be able to grab other values
+ /// as a substitute for the values at the previous time-step.
+ virtual double du_dt_monodomain(const unsigned& n) const
  {
   // Get the data's timestepper
   TimeStepper* time_stepper_pt = this->node_pt(n)->time_stepper_pt();
@@ -431,26 +433,26 @@ public:
 protected:
  /// Shape/test functions and derivs w.r.t. to global coords at
  /// local coord. s; return  Jacobian of mapping
- virtual double dshape_and_dtest_eulerian_cons_adv_diff(const Vector<double>& s,
-                                                        Shape& psi,
-                                                        DShape& dpsidx,
-                                                        Shape& test,
-                                                        DShape& dtestdx) const = 0;
+ virtual double dshape_and_dtest_eulerian_monodomain(const Vector<double>& s,
+                                                     Shape& psi,
+                                                     DShape& dpsidx,
+                                                     Shape& test,
+                                                     DShape& dtestdx) const = 0;
 
  /// Shape/test functions and derivs w.r.t. to global coords at
  /// integration point ipt; return  Jacobian of mapping
- virtual double dshape_and_dtest_eulerian_at_knot_cons_adv_diff(const unsigned& ipt,
-                                                                Shape& psi,
-                                                                DShape& dpsidx,
-                                                                Shape& test,
-                                                                DShape& dtestdx) const = 0;
+ virtual double dshape_and_dtest_eulerian_at_knot_monodomain(const unsigned& ipt,
+                                                             Shape& psi,
+                                                             DShape& dpsidx,
+                                                             Shape& test,
+                                                             DShape& dtestdx) const = 0;
 
  /// Add the element's contribution to its residual vector only
  /// (if flag=and/or element  Jacobian matrix
- virtual void fill_in_generic_residual_contribution_cons_adv_diff(Vector<double>& residuals,
-                                                                  DenseMatrix<double>& jacobian,
-                                                                  DenseMatrix<double>& mass_matrix,
-                                                                  unsigned flag);
+ virtual void fill_in_generic_residual_contribution_monodomain(Vector<double>& residuals,
+                                                               DenseMatrix<double>& jacobian,
+                                                               DenseMatrix<double>& mass_matrix,
+                                                               unsigned flag);
 
  /// Pointer to global Omega (Peclet) number
  double* Omega_pt;
