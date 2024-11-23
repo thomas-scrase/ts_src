@@ -43,9 +43,9 @@
 #include <oomph-lib-config.h>
 #endif
 
-#include "generic/oomph_utilities.h"
-#include "generic/matrices.h"
-#include "constitutive/constitutive_laws.h"
+#include "../generic/oomph_utilities.h"
+#include "../generic/matrices.h"
+#include "../constitutive/constitutive_laws.h"
 
 namespace oomph
 {
@@ -55,15 +55,13 @@ namespace Verify_PVA
  inline static bool verify_number_of_pva(const Vector<Vector<double>>& a,
                                          const unsigned& N_Principal_Vectors_Of_Anisotropy)
  {
- #ifdef PARANOID
   if(N_Principal_Vectors_Of_Anisotropy != a.size())
   {
    return false;
   }
   return true;
- #endif
  }
-}; // End namespace
+} // End namespace
 //=====================================================================
 /// Base class for anisotropic strain energy functions to be used in solid
 /// mechanics computations.
@@ -76,6 +74,25 @@ public:
  {}
 
  virtual ~AnisotropicStrainEnergyFunction() {}
+
+ virtual void I(const DenseMatrix<double>& g,
+                const DenseMatrix<double>& g_up,
+                const DenseMatrix<double>& G,
+                const DenseMatrix<double>& G_up,
+                const double& detg,
+                const double& getG,
+                const Vector<Vector<double>>& a,
+                Vector<double>& I,
+                Vector<DenseMatrix<double>>& dIdG)
+ {
+  std::string error_message =
+   "The additional strain invariants as a function of the undeformed and deformed metric tensors,\n";
+  error_message +=
+   "and principal vectors of anisotropy a, is not implemented for this strain energy function.\n";
+
+  throw OomphLibError(
+   error_message, OOMPH_CURRENT_FUNCTION, OOMPH_EXCEPTION_LOCATION);
+ }
 
  virtual double W(const DenseMatrix<double>& gamma, const Vector<Vector<double>> a)
  {
@@ -150,6 +167,15 @@ public:
  /// Used as a sanity check in PARANOID mode.
  virtual bool requires_incompressibility_constraint() = 0;
 
+ const double get_n_principal_vectors_of_anisotropy() const
+ {
+  return N_Principal_Vectors_Of_Anisotropy;
+ }
+
+ const double get_n_additional_strain_invariants() const
+ {
+  return N_Additional_Strain_Invariants;
+ }
 protected:
  // How many PVA are required by the model
  unsigned N_Principal_Vectors_Of_Anisotropy;
@@ -161,7 +187,7 @@ protected:
 
 // Essentially a direct copy from ConstitutiveLaw with a few new Calculate second Piola Kitchhoff stress functions
 //  with an additional argument to account for the vectors of anisotropy
-class AnisotropicConstitutiveLaw : ConstitutiveLaw
+class AnisotropicConstitutiveLaw : public virtual ConstitutiveLaw
 {
 public:
  AnisotropicConstitutiveLaw() : ConstitutiveLaw() {}
@@ -363,6 +389,15 @@ public:
                                                       DenseMatrix<double>& Gcontra,
                                                       double& gen_dil,
                                                       double& inv_kappa) override;
+
+ /// State if the constitutive equation requires an incompressible
+ /// formulation in which the volume constraint is enforced explicitly.
+ /// Used as a sanity check in PARANOID mode. This is determined
+ /// by interrogating the associated strain energy function.
+ bool requires_incompressibility_constraint()
+ {
+   return Strain_Energy_Function_pt->requires_incompressibility_constraint();
+ }
 };
 
 
