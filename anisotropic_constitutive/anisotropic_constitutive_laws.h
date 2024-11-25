@@ -75,6 +75,8 @@ public:
 
  virtual ~AnisotropicStrainEnergyFunction() {}
 
+ // Calculate the additional strain invariants due to the PVA and their derivatives
+ // with respect to the deformed metric tensor.
  virtual void I(const DenseMatrix<double>& g,
                 const DenseMatrix<double>& g_up,
                 const DenseMatrix<double>& G,
@@ -94,6 +96,7 @@ public:
    error_message, OOMPH_CURRENT_FUNCTION, OOMPH_EXCEPTION_LOCATION);
  }
 
+ // Calculate the strain energy function as a function of the strain and PVA
  virtual double W(const DenseMatrix<double>& gamma, const Vector<Vector<double>> a)
  {
   std::string error_message =
@@ -107,7 +110,8 @@ public:
  }
 
  /// Return the strain energy in terms of the strain invariants
- /// the invariants includes the strain invariants due to the PVA
+ /// the invariants includes the strain invariants due to the PVA.
+ /// The first 3 invariants are alaways the isotropic invariants
  virtual double W(const Vector<double>& I)
  {
   std::string error_message =
@@ -128,11 +132,31 @@ public:
                          const Vector<Vector<double>> a,
                          DenseMatrix<double>& dWdgamma)
  {
-  //TODO implement FD method
-  throw OomphLibError(
-   "Sorry, the FD setup of dW/dgamma hasn't been implemented yet",
-   OOMPH_CURRENT_FUNCTION,
-   OOMPH_EXCEPTION_LOCATION);
+  const unsigned dim = gamma.ncol();
+
+  DenseMatrix<double> gamma_temp(gamma);
+
+  // Calculate the derivatives of the strain-energy-function wrt the strain
+  double FD_Jstep = 1.0e-8; // Usual comments about global stuff
+  double energy = W(gamma_temp, a);
+
+  // Loop over the strain invariants
+  for (unsigned i = 0; i < dim; i++)
+  {
+   for (unsigned j = 0; j < dim; j++)
+   {
+    // Store old value
+    double gamma_ij_prev = gamma_temp(i,j);
+    // Increase i,j-th strain entry
+    gamma_temp(i,j) += FD_Jstep;
+    // Get the new value of the strain energy
+    double energy_new = W(gamma_temp, a);
+    // Calculate the value of the derivative
+    dWdgamma(i,j) = (energy_new - energy) / FD_Jstep;
+    // Reset value of i,j-th strain entry
+    gamma_temp(i,j) = gamma_ij_prev;
+   }
+  }
  }
 
  /// Return the derivatives of the strain energy function with
@@ -140,25 +164,25 @@ public:
  /// differences
  virtual void derivatives(Vector<double>& I, Vector<double>& dWdI)
  {
-   // Calculate the derivatives of the strain-energy-function wrt the strain
-   // invariants
-   double FD_Jstep = 1.0e-8; // Usual comments about global stuff
-   double energy = W(I);
+  // Calculate the derivatives of the strain-energy-function wrt the strain
+  // invariants
+  double FD_Jstep = 1.0e-8; // Usual comments about global stuff
+  double energy = W(I);
 
-   // Loop over the strain invariants
-   for (unsigned i = 0; i < 3 + N_Additional_Strain_Invariants; i++)
-   {
-     // Store old value
-     double I_prev = I[i];
-     // Increase ith strain invariant
-     I[i] += FD_Jstep;
-     // Get the new value of the strain energy
-     double energy_new = W(I);
-     // Calculate the value of the derivative
-     dWdI[i] = (energy_new - energy) / FD_Jstep;
-     // Reset value of ith strain invariant
-     I[i] = I_prev;
-   }
+  // Loop over the strain invariants
+  for (unsigned i = 0; i < 3 + N_Additional_Strain_Invariants; i++)
+  {
+   // Store old value
+   double I_prev = I[i];
+   // Increase ith strain invariant
+   I[i] += FD_Jstep;
+   // Get the new value of the strain energy
+   double energy_new = W(I);
+   // Calculate the value of the derivative
+   dWdI[i] = (energy_new - energy) / FD_Jstep;
+   // Reset value of ith strain invariant
+   I[i] = I_prev;
+  }
  }
 
  /// Pure virtual function in which the user must declare if the
