@@ -495,6 +495,7 @@ void AnisotropicStrainEnergyFunctionConstitutiveLaw::
  // Add the contributions from the additional strain invariants from the PVA
  for(unsigned k = 0; k < n_ai; k++)
  {
+  if (!(std::fabs(dWdI[3 + k]) > 0.0)) continue;
   for (unsigned i = 0; i < dim; i++)
   {
    for (unsigned j = 0; j < dim; j++)
@@ -644,6 +645,7 @@ void AnisotropicStrainEnergyFunctionConstitutiveLaw::
  // Add the contributions from the additional strain invariants from the PVA
  for(unsigned k = 0; k < n_ai; k++)
  {
+  if (!(std::fabs(dWdI[3 + k]) > 0.0)) continue;
   for (unsigned i = 0; i < dim; i++)
   {
    for (unsigned j = 0; j < dim; j++)
@@ -806,6 +808,7 @@ void AnisotropicStrainEnergyFunctionConstitutiveLaw::
  // Add the contributions from the additional strain invariants from the PVA
  for(unsigned k = 0; k < n_ai; k++)
  {
+  if (!(std::fabs(dWdI[3 + k]) > 0.0)) continue;
   for (unsigned i = 0; i < dim; i++)
   {
    for (unsigned j = 0; j < dim; j++)

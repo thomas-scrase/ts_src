@@ -34,6 +34,24 @@
 // Then the calculation of the stress tensor and related quantities needed for incompressibility can be handled in the standard way
 
 
+// Need a way in future of being able to pass additional information e.g. active strain/stress
+//  to the anisotropic constitutive equations. Active strain/stress is distinct from body forces
+//  in the formulation. This could be handled by repurposing the a entry. Additional data could be
+//  added to this vector without altering underlying functionality and without requiring new arguments.
+// In active stress method of adding cell generated stress to a tissue model, the stress is often added
+//  by a term which looks like F(\lamdba)f_if_j =  F(\lambda)\frac{\partial I_3}{\partial G_{ij}}
+//  so adding active stress to this model corresponds to setting dW/dI_3 = F(\lambda)
+// This method of passing additional data in will prevent testing to see if the number of PVA passed in
+//  is correct or at least mean we can no longer call it checking for correct number of PVA.
+
+
+// DECISION - which would be better????
+// Need to add the additional argument to the W(I) and derivatives(I, dWdI) functions to use a
+// since a may now contain additional data we need
+// UNLESS we can somehow wrap this up into the strain invariants. Add a strain invariant for each additional
+// piece of data you want to include and set the value of dI/dG = 0 so thatr it doesn't otherwise contribute
+// to the fill in of the Piola-Kirchhoff stress tensor.
+
 
 #ifndef OOMPH_ANISOTROPIC_CONSTITUTIVE_LAWS_HEADER
 #define OOMPH_ANISOTROPIC_CONSTITUTIVE_LAWS_HEADER
