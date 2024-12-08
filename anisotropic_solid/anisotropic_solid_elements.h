@@ -342,6 +342,19 @@ public:
  AnisotropicQPVDElementWithPressure() : QPVDElementWithPressure<DIM>(),
                                         AnisotropicPVDEquationsWithPressure<DIM>()
  {}
+
+ void get_stress(const Vector<double>& s, DenseMatrix<double>& sigma) override
+ {
+  AnisotropicPVDEquationsWithPressure<DIM>::get_stress(s, sigma);
+ }
+protected:
+ void fill_in_generic_residual_contribution_pvd_with_pressure(Vector<double>& residuals,
+                                                              DenseMatrix<double>& jacobian,
+                                                              DenseMatrix<double>& mass_matrix,
+                                                              const unsigned& flag) override
+ {
+  AnisotropicPVDEquationsWithPressure<DIM>::fill_in_generic_residual_contribution_pvd_with_pressure(residuals, jacobian, mass_matrix, flag);
+ }
 };
 
 template<>
@@ -391,6 +404,19 @@ public:
  AnisotropicQPVDElementWithContinuousPressure() : QPVDElementWithContinuousPressure<DIM>(),
                                                   AnisotropicPVDEquationsWithPressure<DIM>()
  {}
+
+ void get_stress(const Vector<double>& s, DenseMatrix<double>& sigma) override
+ {
+  AnisotropicPVDEquationsWithPressure<DIM>::get_stress(s, sigma);
+ }
+protected:
+ void fill_in_generic_residual_contribution_pvd_with_pressure(Vector<double>& residuals,
+                                                              DenseMatrix<double>& jacobian,
+                                                              DenseMatrix<double>& mass_matrix,
+                                                              const unsigned& flag) override
+ {
+  AnisotropicPVDEquationsWithPressure<DIM>::fill_in_generic_residual_contribution_pvd_with_pressure(residuals, jacobian, mass_matrix, flag);
+ }
 };
 
 template<>
@@ -427,6 +453,176 @@ class FaceGeometry<FaceGeometry<AnisotropicQPVDElementWithContinuousPressure<3>>
 public:
  /// Constructor must call constructor of the underlying element
  FaceGeometry() : SolidQElement<1, 3>() {}
+};
+
+
+template<unsigned DIM, unsigned NNODE_1D>
+class AnisotropicTPVDElement : public virtual TPVDElement<DIM, NNODE_1D>,
+                               public virtual AnisotropicPVDEquations<DIM>
+{
+public:
+ AnisotropicTPVDElement() : TPVDElement<DIM, NNODE_1D>(), AnisotropicPVDEquations<DIM>() {}
+
+ void get_stress(const Vector<double>& s, DenseMatrix<double>& sigma) override
+ {
+  AnisotropicPVDEquations<DIM>::get_stress(s, sigma);
+ }
+protected:
+ void fill_in_generic_contribution_to_residuals_pvd(Vector<double>& residuals,
+                                                    DenseMatrix<double>& jacobian,
+                                                    DenseMatrix<double>& mass_matrix,
+                                                    const unsigned& flag) override
+ {
+  AnisotropicPVDEquations<DIM>::fill_in_generic_contribution_to_residuals_pvd(residuals, jacobian, mass_matrix, flag);
+ }
+};
+
+
+template<unsigned NNODE_1D>
+class FaceGeometry<AnisotropicTPVDElement<2, NNODE_1D>>
+  : public virtual SolidTElement<1, NNODE_1D>
+{
+public:
+  /// Constructor must call the constructor of the underlying solid element
+  FaceGeometry() : SolidTElement<1, NNODE_1D>() {}
+};
+
+
+template<unsigned NNODE_1D>
+class FaceGeometry<FaceGeometry<AnisotropicTPVDElement<2, NNODE_1D>>>
+  : public virtual PointElement
+{
+public:
+  // Make sure that we call the constructor of the SolidQElement
+  // Only the Intel compiler seems to need this!
+  FaceGeometry() : PointElement() {}
+};
+
+
+template<unsigned NNODE_1D>
+class FaceGeometry<AnisotropicTPVDElement<3, NNODE_1D>>
+  : public virtual SolidTElement<2, NNODE_1D>
+{
+public:
+  /// Constructor must call the constructor of the underlying solid element
+  FaceGeometry() : SolidTElement<2, NNODE_1D>() {}
+};
+
+
+template<unsigned NNODE_1D>
+class FaceGeometry<FaceGeometry<AnisotropicTPVDElement<3, NNODE_1D>>>
+  : public virtual SolidTElement<1, NNODE_1D>
+{
+public:
+  /// Constructor must call the constructor of the underlying solid element
+  FaceGeometry() : SolidTElement<1, NNODE_1D>() {}
+};
+
+
+
+template<unsigned DIM, unsigned NNODE_1D>
+class AnisotropicTPVDBubbleEnrichedElement
+ : public virtual TPVDBubbleEnrichedElement<DIM, NNODE_1D>,
+   public virtual AnisotropicPVDEquations<DIM>
+{
+public:
+ AnisotropicTPVDBubbleEnrichedElement() : TPVDBubbleEnrichedElement<DIM, NNODE_1D>(), AnisotropicPVDEquations<DIM>() {}
+
+ void get_stress(const Vector<double>& s, DenseMatrix<double>& sigma) override
+ {
+  AnisotropicPVDEquations<DIM>::get_stress(s, sigma);
+ }
+protected:
+ void fill_in_generic_contribution_to_residuals_pvd(Vector<double>& residuals,
+                                                    DenseMatrix<double>& jacobian,
+                                                    DenseMatrix<double>& mass_matrix,
+                                                    const unsigned& flag) override
+ {
+  AnisotropicPVDEquations<DIM>::fill_in_generic_contribution_to_residuals_pvd(residuals, jacobian, mass_matrix, flag);
+ }
+};
+
+
+template<unsigned NNODE_1D>
+class FaceGeometry<AnisotropicTPVDBubbleEnrichedElement<2, NNODE_1D>>
+  : public virtual SolidTElement<1, NNODE_1D>
+{
+public:
+  /// Constructor must call the constructor of the underlying solid element
+  FaceGeometry() : SolidTElement<1, NNODE_1D>() {}
+};
+
+
+template<unsigned NNODE_1D>
+class FaceGeometry<FaceGeometry<AnisotropicTPVDBubbleEnrichedElement<2, NNODE_1D>>>
+  : public virtual PointElement
+{
+public:
+  // Make sure that we call the constructor of the SolidQElement
+  // Only the Intel compiler seems to need this!
+  FaceGeometry() : PointElement() {}
+};
+
+
+template<unsigned NNODE_1D>
+class FaceGeometry<AnisotropicTPVDBubbleEnrichedElement<3, NNODE_1D>>
+  : public virtual SolidTBubbleEnrichedElement<2, NNODE_1D>
+{
+public:
+  /// Constructor must call the constructor of the underlying solid element
+  FaceGeometry() : SolidTBubbleEnrichedElement<2, NNODE_1D>() {}
+};
+
+
+template<unsigned NNODE_1D>
+class FaceGeometry<FaceGeometry<AnisotropicTPVDBubbleEnrichedElement<3, NNODE_1D>>>
+  : public virtual SolidTElement<1, NNODE_1D>
+{
+public:
+  /// Constructor must call the constructor of the underlying solid element
+  FaceGeometry() : SolidTElement<1, NNODE_1D>() {}
+};
+
+template<unsigned DIM>
+class AnisotropicTPVDElementWithContinuousPressure :
+   public virtual TPVDElementWithContinuousPressure<DIM>,
+   public virtual AnisotropicPVDEquations<DIM>
+{
+public:
+ AnisotropicTPVDElementWithContinuousPressure() : TPVDElementWithContinuousPressure<DIM>(), AnisotropicPVDEquations<DIM>() {}
+
+ void get_stress(const Vector<double>& s, DenseMatrix<double>& sigma) override
+ {
+  AnisotropicPVDEquations<DIM>::get_stress(s, sigma);
+ }
+protected:
+ void fill_in_generic_residual_contribution_pvd_with_pressure(Vector<double>& residuals,
+                                                              DenseMatrix<double>& jacobian,
+                                                              DenseMatrix<double>& mass_matrix,
+                                                              const unsigned& flag) override
+ {
+  AnisotropicPVDEquations<DIM>::fill_in_generic_residual_contribution_pvd_with_pressure(residuals, jacobian, mass_matrix, flag);
+ }
+};
+
+
+template<>
+class FaceGeometry<AnisotropicTPVDElementWithContinuousPressure<2>>
+  : public virtual SolidTElement<1, 3>
+{
+public:
+  /// Constructor: Call constructor of base
+  FaceGeometry() : SolidTElement<1, 3>() {}
+};
+
+
+template<>
+class FaceGeometry<AnisotropicTPVDElementWithContinuousPressure<3>>
+  : public virtual SolidTElement<2, 3>
+{
+public:
+  /// Constructor: Call constructor of base
+  FaceGeometry() : SolidTElement<2, 3>() {}
 };
 
 
