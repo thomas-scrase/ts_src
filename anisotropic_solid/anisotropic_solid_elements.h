@@ -393,6 +393,42 @@ public:
  {}
 };
 
+template<>
+class FaceGeometry<AnisotropicQPVDElementWithContinuousPressure<2>>
+  : public virtual SolidQElement<1, 3>
+{
+public:
+ /// Constructor must call constructor of the underlying Solid element
+ FaceGeometry() : SolidQElement<1, 3>() {}
+};
+
+template<>
+class FaceGeometry<FaceGeometry<AnisotropicQPVDElementWithContinuousPressure<2>>>
+  : public virtual PointElement
+{
+public:
+ /// Constructor must call constructor of the underlying Point element
+ FaceGeometry() : PointElement() {}
+};
+
+template<>
+class FaceGeometry<AnisotropicQPVDElementWithContinuousPressure<3>>
+  : public virtual SolidQElement<2, 3>
+{
+public:
+ /// Constructor must call constructor of the underlying Solid element
+ FaceGeometry() : SolidQElement<2, 3>() {}
+};
+
+template<>
+class FaceGeometry<FaceGeometry<AnisotropicQPVDElementWithContinuousPressure<3>>>
+  : public virtual SolidQElement<1, 3>
+{
+public:
+ /// Constructor must call constructor of the underlying element
+ FaceGeometry() : SolidQElement<1, 3>() {}
+};
+
 
 
 } // End namespace
