@@ -1317,6 +1317,45 @@ void AnisotropicPVDEquationsWithPressure<DIM>::
 }
 
 
+// Instantiate the required elements
+
+// 2D
+
+// Q
+template class AnisotropicPVDEquationsBase<2>;
+template class AnisotropicPVDEquations<2>;
+template class AnisotropicQPVDElement<2,2>;
+template class AnisotropicQPVDElement<2,3>;
+// template class AnisotropicHermitePVDElement<2>;
+template class AnisotropicPVDEquationsWithPressure<2>;
+template class AnisotropicQPVDElementWithPressure<2>;
+template class AnisotropicQPVDElementWithContinuousPressure<2>;
+
+// T
+template class AnisotropicTPVDElement<2,2>;
+template class AnisotropicTPVDElement<2,3>;
+// template class AnisotropicTPVDBubbleEnrichedElement<2,2>;
+template class AnisotropicTPVDElementWithContinuousPressure<2>;
+
+// 3D
+
+// Q
+template class AnisotropicPVDEquationsBase<3>;
+template class AnisotropicPVDEquations<3>;
+template class AnisotropicQPVDElement<3,2>;
+template class AnisotropicQPVDElement<3,3>;
+// template class AnisotropicHermitePVDElement<3>;
+template class AnisotropicPVDEquationsWithPressure<3>;
+template class AnisotropicQPVDElementWithPressure<3>;
+template class AnisotropicQPVDElementWithContinuousPressure<3>;
+
+// T
+template class AnisotropicTPVDElement<3,2>;
+template class AnisotropicTPVDElement<3,3>;
+// template class AnisotropicTPVDBubbleEnrichedElement<3,2>;
+template class AnisotropicTPVDElementWithContinuousPressure<3>;
+
+
 
 
 } // End namespace

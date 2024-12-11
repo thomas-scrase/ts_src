@@ -41,16 +41,10 @@
 // In active stress method of adding cell generated stress to a tissue model, the stress is often added
 //  by a term which looks like F(\lamdba)f_if_j =  F(\lambda)\frac{\partial I_3}{\partial G_{ij}}
 //  so adding active stress to this model corresponds to setting dW/dI_3 = F(\lambda)
-// This method of passing additional data in will prevent testing to see if the number of PVA passed in
-//  is correct or at least mean we can no longer call it checking for correct number of PVA.
 
-
-// DECISION - which would be better????
-// Need to add the additional argument to the W(I) and derivatives(I, dWdI) functions to use a
-// since a may now contain additional data we need
-// UNLESS we can somehow wrap this up into the strain invariants. Add a strain invariant for each additional
-// piece of data you want to include and set the value of dI/dG = 0 so thatr it doesn't otherwise contribute
-// to the fill in of the Piola-Kirchhoff stress tensor.
+// Decided to include it in this way. Principal vectors of anisotropy can also contain any additional information.
+// Strain invariants can then be added to represent any quantities needed in the formulation and these can be
+//  removed from any subsequent calculation of the piola kirchhoff stress tensor.
 
 
 #ifndef OOMPH_ANISOTROPIC_CONSTITUTIVE_LAWS_HEADER
@@ -228,8 +222,8 @@ protected:
 
 
 // Essentially a direct copy from ConstitutiveLaw with a few new Calculate second Piola Kitchhoff stress functions
-//  with an additional argument to account for the vectors of anisotropy
-class AnisotropicConstitutiveLaw : public virtual ConstitutiveLaw
+//  with an additional argument to account for the principal vectors of anisotropy
+class AnisotropicConstitutiveLaw : public ConstitutiveLaw
 {
 public:
  AnisotropicConstitutiveLaw() : ConstitutiveLaw() {}
@@ -268,7 +262,6 @@ public:
   const Vector<Vector<double>>& a,
   RankFourTensor<double>& d_sigma_dG,
   const bool& symmetrize_tensor = true);
-
 
  /// Calculate the deviatoric part
  /// \f$ \overline{ \sigma^{ij}}\f$  of the contravariant
@@ -368,6 +361,94 @@ public:
  /// in which the volume constraint is enforced explicitly.
  /// Used as a sanity check in PARANOID mode.
  virtual bool requires_incompressibility_constraint() = 0;
+
+
+ // BEGIN Intentionally break the isotropic strain energy functions
+ void calculate_second_piola_kirchhoff_stress(
+  const DenseMatrix<double>& g,
+  const DenseMatrix<double>& G,
+  DenseMatrix<double>& sigma)
+ {
+  throw OomphLibError(
+   "Isotropic stress functions are intentionally broken in AnisotropicConstitutiveLaw",
+   OOMPH_CURRENT_FUNCTION,
+   OOMPH_EXCEPTION_LOCATION);
+ }
+
+ void calculate_d_second_piola_kirchhoff_stress_dG(
+  const DenseMatrix<double>& g,
+  const DenseMatrix<double>& G,
+  const DenseMatrix<double>& sigma,
+  RankFourTensor<double>& d_sigma_dG,
+  const bool& symmetrize_tensor = true)
+ {
+  throw OomphLibError(
+   "Isotropic stress functions are intentionally broken in AnisotropicConstitutiveLaw",
+   OOMPH_CURRENT_FUNCTION,
+   OOMPH_EXCEPTION_LOCATION);
+ }
+
+  void calculate_second_piola_kirchhoff_stress(
+  const DenseMatrix<double>& g,
+  const DenseMatrix<double>& G,
+  DenseMatrix<double>& sigma_dev,
+  DenseMatrix<double>& G_contra,
+  double& Gdet)
+ {
+  throw OomphLibError(
+   "Isotropic stress functions are intentionally broken in AnisotropicConstitutiveLaw",
+   OOMPH_CURRENT_FUNCTION,
+   OOMPH_EXCEPTION_LOCATION);
+ }
+
+ void calculate_d_second_piola_kirchhoff_stress_dG(
+  const DenseMatrix<double>& g,
+  const DenseMatrix<double>& G,
+  const DenseMatrix<double>& sigma,
+  const double& detG,
+  const double& interpolated_solid_p,
+  RankFourTensor<double>& d_sigma_dG,
+  DenseMatrix<double>& d_detG_dG,
+  const bool& symmetrize_tensor = true)
+ {
+  throw OomphLibError(
+   "Isotropic stress functions are intentionally broken in AnisotropicConstitutiveLaw",
+   OOMPH_CURRENT_FUNCTION,
+   OOMPH_EXCEPTION_LOCATION);
+ }
+
+ void calculate_second_piola_kirchhoff_stress(
+  const DenseMatrix<double>& g,
+  const DenseMatrix<double>& G,
+  DenseMatrix<double>& sigma_dev,
+  DenseMatrix<double>& Gcontra,
+  double& gen_dil,
+  double& inv_kappa)
+ {
+  throw OomphLibError(
+   "Isotropic stress functions are intentionally broken in AnisotropicConstitutiveLaw",
+   OOMPH_CURRENT_FUNCTION,
+   OOMPH_EXCEPTION_LOCATION);
+ }
+
+ void calculate_d_second_piola_kirchhoff_stress_dG(
+  const DenseMatrix<double>& g,
+  const DenseMatrix<double>& G,
+  const DenseMatrix<double>& sigma,
+  const double& gen_dil,
+  const double& inv_kappa,
+  const double& interpolated_solid_p,
+  RankFourTensor<double>& d_sigma_dG,
+  DenseMatrix<double>& d_gen_dil_dG,
+  const bool& symmetrize_tensor = true)
+ {
+  throw OomphLibError(
+   "Isotropic stress functions are intentionally broken in AnisotropicConstitutiveLaw",
+   OOMPH_CURRENT_FUNCTION,
+   OOMPH_EXCEPTION_LOCATION);
+ }
+ //END intentionally break all isotropic stress functions
+
 
 protected:
  // How many PVA are required by the model

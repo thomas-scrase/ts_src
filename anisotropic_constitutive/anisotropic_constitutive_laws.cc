@@ -495,13 +495,13 @@ void AnisotropicStrainEnergyFunctionConstitutiveLaw::
  // Add the contributions from the additional strain invariants from the PVA
  for(unsigned k = 0; k < n_ai; k++)
  {
-  if (!(std::fabs(dWdI[3 + k]) > 0.0)) continue;
+  // if (!(std::fabs(dWdI[3 + k]) > 0.0)) continue;
   for (unsigned i = 0; i < dim; i++)
   {
    for (unsigned j = 0; j < dim; j++)
    {
     // We multiply by 2.0 because d/dsigma(i,j) = 2.0d/dG(i,j)
-    sigma(i, j) = dWdI[3 + k] * 2.0 * dI_add_dG[k](i,j);
+    sigma(i, j) += dWdI[3 + k] * 2.0 * dI_add_dG[k](i,j);
    }
   }
  }
@@ -645,13 +645,13 @@ void AnisotropicStrainEnergyFunctionConstitutiveLaw::
  // Add the contributions from the additional strain invariants from the PVA
  for(unsigned k = 0; k < n_ai; k++)
  {
-  if (!(std::fabs(dWdI[3 + k]) > 0.0)) continue;
+  // if (!(std::fabs(dWdI[3 + k]) > 0.0)) continue;
   for (unsigned i = 0; i < dim; i++)
   {
    for (unsigned j = 0; j < dim; j++)
    {
     // We multiply by 2.0 because d/dsigma(i,j) = 2.0d/dG(i,j)
-    sigma_dev(i, j) = dWdI[3 + k] * 2.0 * dI_add_dG[k](i,j);
+    sigma_dev(i, j) += dWdI[3 + k] * 2.0 * dI_add_dG[k](i,j);
    }
   }
  }
@@ -808,13 +808,13 @@ void AnisotropicStrainEnergyFunctionConstitutiveLaw::
  // Add the contributions from the additional strain invariants from the PVA
  for(unsigned k = 0; k < n_ai; k++)
  {
-  if (!(std::fabs(dWdI[3 + k]) > 0.0)) continue;
+  // if (!(std::fabs(dWdI[3 + k]) > 0.0)) continue;
   for (unsigned i = 0; i < dim; i++)
   {
    for (unsigned j = 0; j < dim; j++)
    {
     // We multiply by 2.0 because d/dsigma(i,j) = 2.0d/dG(i,j)
-    sigma_dev(i, j) = dWdI[3 + k] * 2.0 * dI_add_dG[k](i,j);
+    sigma_dev(i, j) += dWdI[3 + k] * 2.0 * dI_add_dG[k](i,j);
    }
   }
  }

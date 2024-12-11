@@ -42,7 +42,7 @@ library_include_HEADERS=$(headers)
 # Include path for library headers -- need to refer to include files
 # in their respective source directories as they will not have been 
 # installed yet! 
-AM_CPPFLAGS += -I$(top_builddir)/src/generic
+AM_CPPFLAGS += -I$(top_builddir)/src/generic -I$(top_builddir)/src/constitutive 
 
 
 # Combined header file

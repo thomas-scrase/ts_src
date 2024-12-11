@@ -28,8 +28,7 @@ public:
                                                    const Vector<double>& xi,
                                                    Vector<Vector<double>>& a);
 
-
- AnisotropicPVDEquationsBase() : Anisotropic_constitutive_law_pt(0)
+ AnisotropicPVDEquationsBase() : PVDEquationsBase<DIM>(), Anisotropic_constitutive_law_pt(0)
  {
  }
 
@@ -68,11 +67,13 @@ protected:
 // where needed.
 template<unsigned DIM>
 class AnisotropicPVDEquations : public virtual PVDEquations<DIM>,
-                                               AnisotropicPVDEquationsBase<DIM>
+                                public virtual AnisotropicPVDEquationsBase<DIM>
 {
 public:
+ AnisotropicPVDEquations() : PVDEquations<DIM>(), AnisotropicPVDEquationsBase<DIM>() {}
+
  // We override the get_stress function to get the principal vectors of anisotropy
- void get_stress(const Vector<double>& s, DenseMatrix<double>& sigma);
+ void get_stress(const Vector<double>& s, DenseMatrix<double>& sigma) override;
 
 protected:
  // Override the fill in to contain the necessary steps of including the anisotropic components
@@ -183,15 +184,23 @@ public:
 };
 
 
+// Keeping this in results in undefined references when linking
+// template<unsigned DIM>
+// class AnisotropicHermitePVDElement : public virtual SolidQHermiteElement<DIM>,
+//                                      public virtual AnisotropicPVDEquations<DIM>
+// {
+// public:
+//  /// Constructor, there are no internal data points
+//  AnisotropicHermitePVDElement() : SolidQHermiteElement<DIM>(), AnisotropicPVDEquations<DIM>() {}
 
-template<unsigned DIM>
-class AnisotropicHermitePVDElement : public virtual SolidQHermiteElement<DIM>,
-                                     public virtual AnisotropicPVDEquations<DIM>
-{
-public:
- /// Constructor, there are no internal data points
- AnisotropicHermitePVDElement() : SolidQHermiteElement<DIM>(), AnisotropicPVDEquations<DIM>() {}
-};
+//  void output(std::ostream& out_file){SolidQHermiteElement<DIM>::output(out_file);}
+
+//  void output(std::ostream& out_file, const unsigned int& n_plot){SolidQHermiteElement<DIM>::output(out_file, n_plot);}
+
+//  void output(FILE* out_file){SolidQHermiteElement<DIM>::output(out_file);}
+
+//  void output(FILE* out_file, const unsigned int& n_plot){SolidQHermiteElement<DIM>::output(out_file, n_plot);}
+// };
 
 
 template<unsigned DIM>
@@ -461,7 +470,9 @@ class AnisotropicTPVDElement : public virtual TPVDElement<DIM, NNODE_1D>,
                                public virtual AnisotropicPVDEquations<DIM>
 {
 public:
- AnisotropicTPVDElement() : TPVDElement<DIM, NNODE_1D>(), AnisotropicPVDEquations<DIM>() {}
+ AnisotropicTPVDElement() : TPVDElement<DIM, NNODE_1D>(),
+                            AnisotropicPVDEquations<DIM>()
+ {}
 
  void get_stress(const Vector<double>& s, DenseMatrix<double>& sigma) override
  {
@@ -470,10 +481,9 @@ public:
 protected:
  void fill_in_generic_contribution_to_residuals_pvd(Vector<double>& residuals,
                                                     DenseMatrix<double>& jacobian,
-                                                    DenseMatrix<double>& mass_matrix,
                                                     const unsigned& flag) override
  {
-  AnisotropicPVDEquations<DIM>::fill_in_generic_contribution_to_residuals_pvd(residuals, jacobian, mass_matrix, flag);
+  AnisotropicPVDEquations<DIM>::fill_in_generic_contribution_to_residuals_pvd(residuals, jacobian, flag);
  }
 };
 
@@ -526,7 +536,9 @@ class AnisotropicTPVDBubbleEnrichedElement
    public virtual AnisotropicPVDEquations<DIM>
 {
 public:
- AnisotropicTPVDBubbleEnrichedElement() : TPVDBubbleEnrichedElement<DIM, NNODE_1D>(), AnisotropicPVDEquations<DIM>() {}
+ AnisotropicTPVDBubbleEnrichedElement() : TPVDBubbleEnrichedElement<DIM, NNODE_1D>(),
+                                          AnisotropicPVDEquations<DIM>()
+ {}
 
  void get_stress(const Vector<double>& s, DenseMatrix<double>& sigma) override
  {
@@ -535,10 +547,9 @@ public:
 protected:
  void fill_in_generic_contribution_to_residuals_pvd(Vector<double>& residuals,
                                                     DenseMatrix<double>& jacobian,
-                                                    DenseMatrix<double>& mass_matrix,
                                                     const unsigned& flag) override
  {
-  AnisotropicPVDEquations<DIM>::fill_in_generic_contribution_to_residuals_pvd(residuals, jacobian, mass_matrix, flag);
+  AnisotropicPVDEquations<DIM>::fill_in_generic_contribution_to_residuals_pvd(residuals, jacobian, flag);
  }
 };
 
@@ -586,22 +597,25 @@ public:
 template<unsigned DIM>
 class AnisotropicTPVDElementWithContinuousPressure :
    public virtual TPVDElementWithContinuousPressure<DIM>,
-   public virtual AnisotropicPVDEquations<DIM>
+   public virtual AnisotropicPVDEquationsWithPressure<DIM>
 {
 public:
- AnisotropicTPVDElementWithContinuousPressure() : TPVDElementWithContinuousPressure<DIM>(), AnisotropicPVDEquations<DIM>() {}
+ AnisotropicTPVDElementWithContinuousPressure() : TPVDElementWithContinuousPressure<DIM>(),
+                                                  AnisotropicPVDEquationsWithPressure<DIM>()
+ {}
 
  void get_stress(const Vector<double>& s, DenseMatrix<double>& sigma) override
  {
-  AnisotropicPVDEquations<DIM>::get_stress(s, sigma);
+  AnisotropicPVDEquationsWithPressure<DIM>::get_stress(s, sigma);
  }
+
 protected:
  void fill_in_generic_residual_contribution_pvd_with_pressure(Vector<double>& residuals,
                                                               DenseMatrix<double>& jacobian,
                                                               DenseMatrix<double>& mass_matrix,
                                                               const unsigned& flag) override
  {
-  AnisotropicPVDEquations<DIM>::fill_in_generic_residual_contribution_pvd_with_pressure(residuals, jacobian, mass_matrix, flag);
+  AnisotropicPVDEquationsWithPressure<DIM>::fill_in_generic_residual_contribution_pvd_with_pressure(residuals, jacobian, mass_matrix, flag);
  }
 };
 
