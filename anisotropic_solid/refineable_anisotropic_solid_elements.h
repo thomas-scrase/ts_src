@@ -7,8 +7,10 @@
 #endif
 
 #include "anisotropic_solid_elements.h"
-#include "refineable_solid_elements.h"
+#include "../solid/refineable_solid_elements.h"
 
+
+// Implement
 
 namespace oomph
 {
@@ -17,8 +19,14 @@ class RefineableAnisotropicPVDEquations : public virtual AnisotropicPVDEquations
                                           public virtual RefineablePVDEquations<DIM>
 {
 public:
- RefineableAnisotropicPVDEquations() : AnisotropicPVDEquations<DIM>(),
-                                       RefineablePVDEquations<DIM>()
+ RefineableAnisotropicPVDEquations() : 
+  PVDEquations<DIM>(),
+  RefineableElement(),
+  RefineableSolidElement(),
+  ElementWithZ2ErrorEstimator(),
+  AnisotropicPVDEquationsBase<DIM>(),
+  AnisotropicPVDEquations<DIM>(),
+  RefineablePVDEquations<DIM>()
  {
  }
 
@@ -28,7 +36,7 @@ public:
   RefineablePVDEquations<DIM>::further_build();
 
   // Complete the further build by getting the principal vectors function pointer from father element
-  RefineablePVDEquations<DIM>* cast_father_element_pt = dynamic_cast<RefineablePVDEquations<DIM>*>(this->father_element_pt());
+  AnisotropicPVDEquations<DIM>* cast_father_element_pt = dynamic_cast<AnisotropicPVDEquations<DIM>*>(this->father_element_pt());
   this->Principal_vectors_of_anisotropy_fct_pt = cast_father_element_pt->principal_vectors_of_anisotropy_fct_pt();
  }
 
@@ -39,20 +47,28 @@ protected:
                                                             const unsigned& flag) override;
 };
 
+
+// Implement RefineableAnisotropicQPVDElement
 template<unsigned DIM, unsigned NNODE_1D>
 class RefineableAnisotropicQPVDElement : public virtual RefineableQPVDElement<DIM, NNODE_1D>,
-                                         public virtual RefineableAnisotropicPVDEquations<DIM, NNODE_1D>
+                                         public virtual RefineableAnisotropicPVDEquations<DIM>,
+                                         public virtual RefineableSolidQElement<DIM>
 {
 public:
+ /// Constructor:
  RefineableAnisotropicQPVDElement()
-  : RefineableQPVDElement<DIM, NNODE_1D>(),
-    RefineableAnisotropicPVDEquations<DIM, NNODE_1D>()
- {}
+   : QPVDElement<DIM, NNODE_1D>(),
+     RefineableElement(),
+     RefineableSolidElement(),
+     RefineablePVDEquations<DIM>(),
+     ElementWithZ2ErrorEstimator(),
+     AnisotropicPVDEquationsBase<DIM>(),
+     AnisotropicPVDEquations<DIM>(),
+     RefineableAnisotropicPVDEquations<DIM>(),
+     RefineableSolidQElement<DIM>()
+ {
+ }
 };
-
-
-// TODO
-// Implement RefineableAnisotropicQPVDElement
 
 //==============================================================
 /// FaceGeometry of the 2D RefineableAnisotropicQPVDElement elements
@@ -107,11 +123,120 @@ public:
  FaceGeometry() : SolidQElement<1, NNODE_1D>() {}
 };
 
-//TODO
 
 // Implement RefineableAnisotropicPVDEquationsWithPressure and face elements
+template<unsigned DIM>
+class RefineableAnisotropicPVDEquationsWithPressure : public virtual RefineablePVDEquationsWithPressure<DIM>,
+                                                      public virtual AnisotropicPVDEquationsWithPressure<DIM>
+{
+ RefineableAnisotropicPVDEquationsWithPressure() :
+  PVDEquationsBase<DIM>(),
+  PVDEquationsWithPressure<DIM>(),
+  RefineableElement(),
+  RefineableSolidElement(),
+  ElementWithZ2ErrorEstimator(),
+  AnisotropicPVDEquationsBase<DIM>(),
+  AnisotropicPVDEquationsWithPressure<DIM>(),
+  RefineablePVDEquations<DIM>()
+ {
+ }
+
+ void further_build()
+ {
+  // Call the refineable PVD further build
+  RefineablePVDEquations<DIM>::further_build();
+
+  // Complete the further build by getting the principal vectors function pointer from father element
+  AnisotropicPVDEquations<DIM>* cast_father_element_pt = dynamic_cast<AnisotropicPVDEquations<DIM>*>(this->father_element_pt());
+  this->Principal_vectors_of_anisotropy_fct_pt = cast_father_element_pt->principal_vectors_of_anisotropy_fct_pt();
+ }
+
+protected:
+ void fill_in_generic_residual_contribution_pvd_with_pressure(
+  Vector<double>& residuals,
+  DenseMatrix<double>& jacobian,
+  DenseMatrix<double>& mass_matrix,
+  const unsigned& flag) override;
+};
 
 // Implement RefineableAnisotropicQPVDElementWithPressure and face elements
+template<unsigned DIM>
+class RefineableAnisotropicQPVDElementWithPressure : public virtual RefineableQPVDElementWithPressure<DIM>,
+                                                     public virtual RefineableAnisotropicPVDEquationsWithPressure<DIM>
+{
+public:
+ RefineableAnisotropicQPVDElementWithPressure() : 
+ QPVDElementWithPressure<DIM>(),
+ RefineableElement(),
+ RefineableSolidElement(),
+ RefineablePVDEquationsWithPressure<DIM>(),
+ RefineableSolidQElement<DIM>(),
+ PVDEquationsWithPressure<DIM>(),
+ AnisotropicPVDEquationsBase<DIM>(),
+ AnisotropicPVDEquationsWithPressure<DIM>(),
+ RefineableAnisotropicPVDEquationsWithPressure<DIM>()
+ {
+ }
+};
+
+
+//======================================================================
+/// FaceGeometry of the 2D RefineableAnisotropicQPVDElementWithPressure
+//=======================================================================
+template<>
+class FaceGeometry<RefineableAnisotropicQPVDElementWithPressure<2>>
+ : public virtual SolidQElement<1, 3>
+{
+public:
+ // Make sure that we call the constructor of the SolidQElement
+ // Only the Intel compiler seems to need this!
+ FaceGeometry() : SolidQElement<1, 3>() {}
+};
+
+
+//===========================================================================
+/// FaceGeometry of the FaceGeometry of the 2D
+/// RefineableAnisotropicQPVDElementWithPressure
+//============================================================================
+template<>
+class FaceGeometry<FaceGeometry<RefineableAnisotropicQPVDElementWithPressure<2>>>
+ : public virtual PointElement
+{
+public:
+ // Make sure that we call the constructor of the SolidQElement
+ // Only the Intel compiler seems to need this!
+ FaceGeometry() : PointElement() {}
+};
+
+//=========================================================================
+/// FaceGeometry of the 3D RefineableAnisotropicQPVDElementWithPressure
+//========================================================================
+template<>
+class FaceGeometry<RefineableAnisotropicQPVDElementWithPressure<3>>
+ : public virtual SolidQElement<2, 3>
+{
+public:
+ // Make sure that we call the constructor of the SolidQElement
+ // Only the Intel compiler seems to need this!
+ FaceGeometry() : SolidQElement<2, 3>() {}
+};
+
+
+//========================================================================
+/// FaceGeometry of the FaceGeometry of the 3D
+/// RefineableAnisotropicQPVDElementWithPressure
+//==========================================================================
+template<>
+class FaceGeometry<FaceGeometry<RefineableAnisotropicQPVDElementWithPressure<3>>>
+ : public virtual SolidQElement<1, 3>
+{
+public:
+ // Make sure that we call the constructor of the SolidQElement
+ // Only the Intel compiler seems to need this!
+ FaceGeometry() : SolidQElement<1, 3>() {}
+};
+
+
 
 // Implement RefineableAnisotropicQPVDElementWithContinuousPressure and face elements
 
