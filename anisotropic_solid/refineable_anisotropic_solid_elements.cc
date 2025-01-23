@@ -215,7 +215,7 @@ void RefineableAnisotropicPVDEquations<DIM>::fill_in_generic_contribution_to_res
    // Get the "upper triangular"
    // entries of the derivatives of the stress tensor with
    // respect to G
-   this->get_d_stress_dG_upper(g, G, sigma, d_stress_dG);
+   this->anisotropic_get_d_stress_dG_upper(g, G, sigma, a, d_stress_dG);
   }
 
 
@@ -807,8 +807,8 @@ fill_in_generic_residual_contribution_pvd_with_pressure(
     // Get the "upper triangular" entries of the
     // derivatives of the stress tensor with
     // respect to G
-    this->get_d_stress_dG_upper(
-      g, G, sigma, detG, interpolated_solid_p, d_stress_dG, d_detG_dG);
+    this->anisotropic_get_d_stress_dG_upper(
+      g, G, sigma, detG, interpolated_solid_p, a, d_stress_dG, d_detG_dG);
    }
   }
   // Nearly incompressible: Compute the deviatoric part of the
@@ -833,12 +833,13 @@ fill_in_generic_residual_contribution_pvd_with_pressure(
     // Get the "upper triangular" entries of the derivatives
     // of the stress tensor with
     // respect to G
-    this->get_d_stress_dG_upper(g,
+    this->anisotropic_get_d_stress_dG_upper(g,
                                 G,
                                 sigma,
                                 gen_dil,
                                 inv_kappa,
                                 interpolated_solid_p,
+                                a,
                                 d_stress_dG,
                                 d_gen_dil_dG);
    }
