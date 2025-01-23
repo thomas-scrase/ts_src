@@ -674,7 +674,7 @@ void AnisotropicPVDEquationsWithPressure<DIM>::
  // Check if the constitutive equation requires the explicit imposition of an
  // incompressibility constraint
  if (this->Anisotropic_constitutive_law_pt->requires_incompressibility_constraint() &&
-     (!Incompressible))
+     (!this->Incompressible))
  {
   throw OomphLibError("The constitutive law requires the use of the "
                       "incompressible formulation by setting the element's "

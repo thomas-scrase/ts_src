@@ -38,6 +38,7 @@ public:
   // Complete the further build by getting the principal vectors function pointer from father element
   AnisotropicPVDEquations<DIM>* cast_father_element_pt = dynamic_cast<AnisotropicPVDEquations<DIM>*>(this->father_element_pt());
   this->Principal_vectors_of_anisotropy_fct_pt = cast_father_element_pt->principal_vectors_of_anisotropy_fct_pt();
+  this->Anisotropic_constitutive_law_pt = cast_father_element_pt->anisotropic_constitutive_law_pt();
  }
 
 protected:
@@ -149,6 +150,7 @@ class RefineableAnisotropicPVDEquationsWithPressure : public virtual RefineableP
   // Complete the further build by getting the principal vectors function pointer from father element
   AnisotropicPVDEquations<DIM>* cast_father_element_pt = dynamic_cast<AnisotropicPVDEquations<DIM>*>(this->father_element_pt());
   this->Principal_vectors_of_anisotropy_fct_pt = cast_father_element_pt->principal_vectors_of_anisotropy_fct_pt();
+  this->Anisotropic_constitutive_law_pt = cast_father_element_pt->anisotropic_constitutive_law_pt();
  }
 
 protected:

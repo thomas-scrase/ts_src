@@ -11,7 +11,7 @@ void RefineableAnisotropicPVDEquations<DIM>::fill_in_generic_contribution_to_res
 #ifdef PARANOID
  // Check if the constitutive equation requires the explicit imposition of an
  // incompressibility constraint
- if (this->Constitutive_law_pt->requires_incompressibility_constraint())
+ if (this->Anisotropic_constitutive_law_pt->requires_incompressibility_constraint())
  {
   throw OomphLibError("RefineablePVDEquations cannot be used with "
                       "incompressible constitutive laws.",
@@ -527,7 +527,7 @@ fill_in_generic_residual_contribution_pvd_with_pressure(
 #ifdef PARANOID
  // Check if the constitutive equation requires the explicit imposition of an
  // incompressibility constraint
- if (this->Constitutive_law_pt->requires_incompressibility_constraint() &&
+ if (this->Anisotropic_constitutive_law_pt->requires_incompressibility_constraint() &&
      (!this->Incompressible))
  {
   throw OomphLibError("The constitutive law requires the use of the "
