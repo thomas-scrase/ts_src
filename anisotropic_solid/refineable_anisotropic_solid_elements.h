@@ -24,9 +24,9 @@ public:
   RefineableElement(),
   RefineableSolidElement(),
   ElementWithZ2ErrorEstimator(),
+  RefineablePVDEquations<DIM>(),
   AnisotropicPVDEquationsBase<DIM>(),
-  AnisotropicPVDEquations<DIM>(),
-  RefineablePVDEquations<DIM>()
+  AnisotropicPVDEquations<DIM>()
  {
  }
 
@@ -57,17 +57,28 @@ class RefineableAnisotropicQPVDElement : public virtual RefineableQPVDElement<DI
 {
 public:
  /// Constructor:
- RefineableAnisotropicQPVDElement()
-   : QPVDElement<DIM, NNODE_1D>(),
-     RefineableElement(),
-     RefineableSolidElement(),
-     RefineablePVDEquations<DIM>(),
-     ElementWithZ2ErrorEstimator(),
-     AnisotropicPVDEquationsBase<DIM>(),
-     AnisotropicPVDEquations<DIM>(),
-     RefineableAnisotropicPVDEquations<DIM>(),
-     RefineableSolidQElement<DIM>()
+ RefineableAnisotropicQPVDElement() :
+  SolidQElement<DIM, NNODE_1D>(),
+  PVDEquations<DIM>(),
+  QPVDElement<DIM, NNODE_1D>(),
+  RefineablePVDEquations<DIM>(),
+  RefineableSolidQElement<DIM>(),
+  RefineableElement(),
+  RefineableSolidElement(),
+  ElementWithZ2ErrorEstimator(),
+  AnisotropicPVDEquationsBase<DIM>(),
+  AnisotropicPVDEquations<DIM>(),
+  RefineableAnisotropicPVDEquations<DIM>()
  {
+ }
+
+protected:
+ // Override the fill in to contain the necessary steps of including the anisotropic components
+ virtual void fill_in_generic_contribution_to_residuals_pvd(Vector<double>& residuals,
+                                                            DenseMatrix<double>& jacobian,
+                                                            const unsigned& flag) override
+ {
+  RefineableAnisotropicPVDEquations<DIM>::fill_in_generic_contribution_to_residuals_pvd(residuals, jacobian, flag);
  }
 };
 
@@ -168,16 +179,27 @@ class RefineableAnisotropicQPVDElementWithPressure : public virtual RefineableQP
 {
 public:
  RefineableAnisotropicQPVDElementWithPressure() : 
- QPVDElementWithPressure<DIM>(),
- RefineableElement(),
- RefineableSolidElement(),
- RefineablePVDEquationsWithPressure<DIM>(),
- RefineableSolidQElement<DIM>(),
- PVDEquationsWithPressure<DIM>(),
- AnisotropicPVDEquationsBase<DIM>(),
- AnisotropicPVDEquationsWithPressure<DIM>(),
- RefineableAnisotropicPVDEquationsWithPressure<DIM>()
+  QPVDElementWithPressure<DIM>(),
+  RefineableElement(),
+  RefineableSolidElement(),
+  RefineablePVDEquationsWithPressure<DIM>(),
+  RefineableSolidQElement<DIM>(),
+  PVDEquationsWithPressure<DIM>(),
+  AnisotropicPVDEquationsBase<DIM>(),
+  AnisotropicPVDEquationsWithPressure<DIM>(),
+  RefineableAnisotropicPVDEquationsWithPressure<DIM>()
  {
+ }
+
+
+protected:
+ void fill_in_generic_residual_contribution_pvd_with_pressure(
+  Vector<double>& residuals,
+  DenseMatrix<double>& jacobian,
+  DenseMatrix<double>& mass_matrix,
+  const unsigned& flag) override
+ {
+  RefineableAnisotropicPVDEquationsWithPressure<DIM>::fill_in_generic_residual_contribution_pvd_with_pressure(residuals, jacobian, mass_matrix, flag);
  }
 };
 
