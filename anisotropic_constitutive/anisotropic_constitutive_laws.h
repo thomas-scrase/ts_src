@@ -182,7 +182,7 @@ public:
   double energy = W(I);
 
   // Loop over the strain invariants
-  for (unsigned i = 0; i < 3 + N_Additional_Strain_Invariants; i++)
+  for (unsigned i = 0; i < 3 + get_n_additional_strain_invariants(); i++)
   {
    // Store old value
    double I_prev = I[i];
@@ -203,15 +203,16 @@ public:
  /// Used as a sanity check in PARANOID mode.
  virtual bool requires_incompressibility_constraint() = 0;
 
- const double get_n_principal_vectors_of_anisotropy() const
+ inline const unsigned get_n_principal_vectors_of_anisotropy() const
  {
   return N_Principal_Vectors_Of_Anisotropy;
  }
 
- const double get_n_additional_strain_invariants() const
+ inline const unsigned get_n_additional_strain_invariants() const
  {
   return N_Additional_Strain_Invariants;
  }
+
 protected:
  // How many PVA are required by the model
  unsigned N_Principal_Vectors_Of_Anisotropy;
@@ -361,6 +362,17 @@ public:
  /// in which the volume constraint is enforced explicitly.
  /// Used as a sanity check in PARANOID mode.
  virtual bool requires_incompressibility_constraint() = 0;
+
+ // Virtual so that AnisotropicStrainEnergyFunctionConstitutiveLaw can get these values from the strain energy function
+ virtual inline const unsigned get_n_principal_vectors_of_anisotropy()
+ {
+  return N_Principal_Vectors_Of_Anisotropy;
+ }
+
+ virtual inline const unsigned get_n_additional_strain_invariants()
+ {
+  return N_Additional_Strain_Invariants;
+ }
 
 
  // BEGIN Intentionally break the isotropic strain energy functions
@@ -520,6 +532,16 @@ public:
  bool requires_incompressibility_constraint()
  {
    return Strain_Energy_Function_pt->requires_incompressibility_constraint();
+ }
+
+ inline const unsigned get_n_principal_vectors_of_anisotropy() override
+ {
+  return Strain_Energy_Function_pt->get_n_principal_vectors_of_anisotropy();
+ }
+
+ inline const unsigned get_n_additional_strain_invariants() override
+ {
+  return Strain_Energy_Function_pt->get_n_additional_strain_invariants();
  }
 };
 

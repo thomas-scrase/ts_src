@@ -33,7 +33,7 @@ void AnisotropicConstitutiveLaw::calculate_d_second_piola_kirchhoff_stress_dG(
  }
 
  // Test that there are enough PVA
- if(!Verify_PVA::verify_number_of_pva(a, N_Principal_Vectors_Of_Anisotropy))
+ if(!Verify_PVA::verify_number_of_pva(a, get_n_principal_vectors_of_anisotropy()))
  {
   throw OomphLibError("Number of principal vectors of anisotropy is incorrect",
                       OOMPH_CURRENT_FUNCTION,
@@ -146,7 +146,7 @@ void AnisotropicConstitutiveLaw::calculate_d_second_piola_kirchhoff_stress_dG(
  }
 
  // Test that there are enough PVA
- if(!Verify_PVA::verify_number_of_pva(a, N_Principal_Vectors_Of_Anisotropy))
+ if(!Verify_PVA::verify_number_of_pva(a, get_n_principal_vectors_of_anisotropy()))
  {
   throw OomphLibError("Number of principal vectors of anisotropy is incorrect",
                       OOMPH_CURRENT_FUNCTION,
@@ -268,7 +268,7 @@ void AnisotropicConstitutiveLaw::calculate_d_second_piola_kirchhoff_stress_dG(
  }
 
  // Test that there are enough PVA
- if(!Verify_PVA::verify_number_of_pva(a, N_Principal_Vectors_Of_Anisotropy))
+ if(!Verify_PVA::verify_number_of_pva(a, get_n_principal_vectors_of_anisotropy()))
  {
   throw OomphLibError("Number of principal vectors of anisotropy is incorrect",
                       OOMPH_CURRENT_FUNCTION,
@@ -376,7 +376,7 @@ void AnisotropicStrainEnergyFunctionConstitutiveLaw::
  error_checking_in_input(g, G, sigma);
 
  // Test that there are enough PVA
- if(!Verify_PVA::verify_number_of_pva(a, N_Principal_Vectors_Of_Anisotropy))
+ if(!Verify_PVA::verify_number_of_pva(a, get_n_principal_vectors_of_anisotropy()))
  {
   throw OomphLibError("Number of principal vectors of anisotropy is incorrect",
                       OOMPH_CURRENT_FUNCTION,
@@ -529,7 +529,7 @@ void AnisotropicStrainEnergyFunctionConstitutiveLaw::
  error_checking_in_input(g, G, sigma_dev);
 
  // Test that there are enough PVA
- if(!Verify_PVA::verify_number_of_pva(a, N_Principal_Vectors_Of_Anisotropy))
+ if(!Verify_PVA::verify_number_of_pva(a, get_n_principal_vectors_of_anisotropy()))
  {
   throw OomphLibError("Number of principal vectors of anisotropy is incorrect",
                       OOMPH_CURRENT_FUNCTION,
@@ -694,7 +694,7 @@ void AnisotropicStrainEnergyFunctionConstitutiveLaw::
  error_checking_in_input(g, G, sigma_dev);
 
  // Test that there are enough PVA
- if(!Verify_PVA::verify_number_of_pva(a, N_Principal_Vectors_Of_Anisotropy))
+ if(!Verify_PVA::verify_number_of_pva(a, get_n_principal_vectors_of_anisotropy()))
  {
   throw OomphLibError("Number of principal vectors of anisotropy is incorrect",
                       OOMPH_CURRENT_FUNCTION,
