@@ -81,9 +81,7 @@ namespace Verify_PVA
 class AnisotropicStrainEnergyFunction
 {
 public:
- AnisotropicStrainEnergyFunction() : N_Principal_Vectors_Of_Anisotropy(0),
-                                     N_Additional_Strain_Invariants(0)
- {}
+ AnisotropicStrainEnergyFunction() {}
 
  virtual ~AnisotropicStrainEnergyFunction() {}
 
@@ -203,21 +201,11 @@ public:
  /// Used as a sanity check in PARANOID mode.
  virtual bool requires_incompressibility_constraint() = 0;
 
- inline const unsigned get_n_principal_vectors_of_anisotropy() const
- {
-  return N_Principal_Vectors_Of_Anisotropy;
- }
-
- inline const unsigned get_n_additional_strain_invariants() const
- {
-  return N_Additional_Strain_Invariants;
- }
-
-protected:
  // How many PVA are required by the model
- unsigned N_Principal_Vectors_Of_Anisotropy;
+ virtual inline const unsigned get_n_principal_vectors_of_anisotropy() = 0;
+
  // How many additional strain invariants are introduced by the PVA
- unsigned N_Additional_Strain_Invariants; 
+ virtual inline const unsigned get_n_additional_strain_invariants() = 0
 };
 
 
@@ -363,16 +351,13 @@ public:
  /// Used as a sanity check in PARANOID mode.
  virtual bool requires_incompressibility_constraint() = 0;
 
- // Virtual so that AnisotropicStrainEnergyFunctionConstitutiveLaw can get these values from the strain energy function
- virtual inline const unsigned get_n_principal_vectors_of_anisotropy()
- {
-  return N_Principal_Vectors_Of_Anisotropy;
- }
+ // Both virtual so that AnisotropicStrainEnergyFunctionConstitutiveLaw can get these values from the strain energy function
+ 
+ // How many PVA are required by the model
+ virtual inline const unsigned get_n_principal_vectors_of_anisotropy() = 0;
 
- virtual inline const unsigned get_n_additional_strain_invariants()
- {
-  return N_Additional_Strain_Invariants;
- }
+ // How many additional strain invariants are introduced by the PVA
+ virtual inline const unsigned get_n_additional_strain_invariants() = 0
 
 
  // BEGIN Intentionally break the isotropic strain energy functions
@@ -460,13 +445,6 @@ public:
    OOMPH_EXCEPTION_LOCATION);
  }
  //END intentionally break all isotropic stress functions
-
-
-protected:
- // How many PVA are required by the model
- unsigned N_Principal_Vectors_Of_Anisotropy;
- // How many additional strain invariants are introduced by the PVA
- unsigned N_Additional_Strain_Invariants; 
 };
 
 
